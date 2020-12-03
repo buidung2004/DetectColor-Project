@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pandas as pd
 
 frameWidth = 300
 frameHeight = 480
