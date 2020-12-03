@@ -1,0 +1,85 @@
+import numpy as np
+import cv2
+from matplotlib import pyplot as plt
+
+# img = cv2.imread('people.jpg')
+# gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#
+# faces = face_cascade.detectMultiScale(gray, 1.1, 3)
+#
+#
+# for (x,y,w,h) in faces:
+#     cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+#     roi_gray = gray[y:y+h, x:x+w]
+#     roi_color = img[y:y+h, x:x+w]
+#     eyes = eye_cascade.detectMultiScale(roi_gray)
+#     for (ex,ey,ew,eh) in eyes:
+#         cv2.rectangle(roi_color,(ex,ey),(ex+ew,ey+eh),(0,255,0),2)
+#
+# cv2.imshow('img',img)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+
+MyColors = [[6, 103, 126, 31, 224, 255, "yellow"],
+            [49, 40, 41, 71, 153, 255, "green"]]
+
+Color = [[0, 255, 255],
+         [0, 255, 0]]
+
+myPoints=[]
+
+def Findcolor(img, MyColors, Color):
+    imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    i = 0
+    NewPoints = []
+    for color in MyColors:
+        lower = np.array(color[0:3])
+        upper = np.array(color[3:6])
+        mask = cv2.inRange(imgHSV, lower, upper)
+        cv2.imshow(color[6], mask)
+        a, b = GetContours(mask)
+        cv2.circle(imgCon, (a, b), 10, Color[i], cv2.FILLED)
+        #if a != 0 and b != 0:
+        NewPoints.append([a, b, i])
+        i = i + 1
+    return NewPoints
+
+
+def GetContours(img):
+    contuors, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # print(len(contuors))
+    x, y, w, h = (0, 0, 0, 0)
+    for cnt in contuors:
+        area = cv2.contourArea(cnt)
+        if (area > 500):
+            # cv2.drawContours(imgCon, cnt, -1, (0,0,0), 5)
+            peri = cv2.arcLength(cnt, True)
+            # print(peri)
+            aprox = cv2.approxPolyDP(cnt, 0.03 * peri, True)
+            x, y, w, h = cv2.boundingRect(aprox)
+    return x + w // 2, y
+
+
+def DrawCanvas(myPoints, Color):
+    for point in myPoints:
+        cv2.circle(imgCon, (point[0], point[1]), 10, Color[point[2]], cv2.FILLED)
+
+
+cap = cv2.VideoCapture(0)
+cap.set(3, 680)
+cap.set(4, 240)
+while True:
+
+    success, img = cap.read()
+    img=cv2.flip(img,1)
+    imgCon = img.copy()
+    NewPoints = Findcolor(img, MyColors, Color)
+    if (len(NewPoints)!=0):
+        for newP in NewPoints:
+            myPoints.append(newP)
+    if len(NewPoints) != 0:
+        DrawCanvas(myPoints, Color)
+
+    cv2.imshow("Webcam", imgCon)
+    if (cv2.waitKey(1) & 0xFF == ('q')):
+        break
